@@ -1,28 +1,32 @@
 class Serializer
-  @@attrs = []
+  class << self
+    attr_reader :attrs
+  end
+  def self.object
+    @@object
+  end
+
+  def self.attribute(attr, &block)
+    @attrs ||= []
+    attrs << (block_given? ? { key: attr, block: block } : attr)
+  end
 
   def initialize(object)
     @@object = object
   end
 
   def serialize
-    result = {}
-
-    @@attrs.each do |attr|
-      result[attr] = @@object.send(attr) if attr.is_a? Symbol
-      result[attr[:key]] = attr[:block].call if attr.is_a? Hash
+    response = {}
+    attrs.each do |attr|
+      response[attr] = @@object.send(attr) if attr.instance_of?(Symbol)
+      response[attr[:key]] = attr[:block].call if attr.instance_of?(Hash)
     end
-
-    result
+    response
   end
 
-  def self.object
-    @@object
-  end
+  private
 
-  def self.attribute(attr, &block)
-    return @@attrs << attr unless block_given?
-
-    @@attrs << { key: attr, block: block }
+  def attrs
+    self.class.attrs
   end
 end
